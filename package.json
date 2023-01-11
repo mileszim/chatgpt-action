@@ -18,7 +18,18 @@
     "Actions",
     "JavaScript"
   ],
-  "author": "",
+  "contributors": [
+    {
+      "name": "Levi Zim",
+      "email": "sworktech@outlook.com",
+      "url": "https://github.com/kxxt"
+    },
+    {
+      "name": "Miles Zimmerman",
+      "email": "miles@zim.dev",
+      "url": "https://github.com/mileszim"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/actions/javascript-action/issues"

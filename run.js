@@ -6,7 +6,7 @@ const github = require("@actions/github");
 const octokit = new Octokit();
 const context = github.context;
 
-async function runPRReview({ api, repo, owner, number, split }) {
+async function runPRReview ({ api, repo, owner, number, split }) {
   const {
     data: { title, body },
   } = await octokit.pulls.get({
@@ -56,4 +56,30 @@ async function runPRReview({ api, repo, owner, number, split }) {
   });
 }
 
-module.exports = { runPRReview };
+async function runPRSummary ({ api, repo, owner, number }) {
+  const {
+    data: { title, body },
+  } = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number: number,
+  });
+  const { data: diff } = await octokit.rest.pulls.get({
+    owner,
+    repo,
+    pull_number: number,
+    mediaType: {
+      format: "diff",
+    },
+  });
+  const prompt = genReviewPRPrompt(title, body, diff);
+  core.info(`The prompt is: ${prompt}`);
+  const response = await callChatGPT(api, prompt, 5);
+  await octokit.issues.createComment({
+    ...context.repo,
+    issue_number: number,
+    body: response,
+  });
+}
+
+module.exports = { runPRReview, runPRSummary };

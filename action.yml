@@ -19,6 +19,10 @@ inputs:
     description: "Should I split the prompt and how to split it?"
     required: true
     default: "yolo"
+  operation:
+    description: "Review or Summarize the PR?"
+    required: true
+    default: "review"
 outputs:
   comment:
     description: "The comment from chatgpt."

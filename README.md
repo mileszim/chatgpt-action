@@ -1,6 +1,6 @@
 # chatgpt-action
 
-Let chatgpt review your PR.
+Let chatgpt review or summarize your PR.
 
 Please note： this repo is a WIP and I do not recommend you to use it in production!
 
@@ -32,6 +32,31 @@ one reason against using this action in production.
 - https://github.com/kxxt/chatgpt-action/pull/22
 
 ## Usage
+
+### Summarize a Pull Request
+
+```yaml
+on: [pull_request]
+
+name: ChatGPT Summary
+
+jobs:
+  chatgpt_comment:
+    runs-on: ubuntu-latest
+    name: ChatGPT summarizes your PRs.
+    steps:
+      - name: ChatGPT Summary
+        uses: mileszim/chatgpt-action@v1
+        id: chatgpt
+        with:
+          number: ${{ github.event.pull_request.number }}
+          sessionToken: ${{ secrets.CHATGPT_SESSION_TOKEN }}
+          operation: summarize
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Review a Pull Request
 
 ```yaml
 on: [pull_request]

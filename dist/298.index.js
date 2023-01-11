@@ -15219,6 +15219,11 @@ var fetch = globalThis.fetch ?? async function undiciFetchWrapper(...args) {
   if (!_undici) {
     _undici = await __webpack_require__.e(/* import() */ 881).then(__webpack_require__.t.bind(__webpack_require__, 1773, 19));
   }
+  if (typeof (_undici == null ? void 0 : _undici.fetch) !== "function") {
+    throw new Error(
+      "Invalid undici installation; please make sure undici is installed correctly in your node_modules. Note that this package requires Node.js >= 16.8"
+    );
+  }
   return _undici.fetch(...args);
 };
 
@@ -15253,9 +15258,22 @@ async function fetchSSE(url, options) {
       onMessage(event.data);
     }
   });
-  for await (const chunk of streamAsyncIterable(res.body)) {
-    const str = new TextDecoder().decode(chunk);
-    parser.feed(str);
+  if (!res.body.getReader) {
+    const body = res.body;
+    if (!body.on || !body.read) {
+      throw new Error('unsupported "fetch" implementation');
+    }
+    body.on("readable", () => {
+      let chunk;
+      while (null !== (chunk = body.read())) {
+        parser.feed(chunk.toString());
+      }
+    });
+  } else {
+    for await (const chunk of streamAsyncIterable(res.body)) {
+      const str = new TextDecoder().decode(chunk);
+      parser.feed(str);
+    }
   }
 }
 

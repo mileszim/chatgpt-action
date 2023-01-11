@@ -38,4 +38,13 @@ When a diff is too large, I will omit it and tell you about that.`,
   };
 }
 
-module.exports = { genReviewPRPrompt, genReviewPRSplitedPrompt };
+function genPRSummaryPrompt(title, body, diff) {
+  const prompt = `Summarize the code changes made in this PR as a list of no more than 10 entries.
+  title: ${title}
+  body: ${body}
+  The following diff is the changes made in this PR.
+  ${diff}`;
+  return prompt;
+}
+
+module.exports = { genReviewPRPrompt, genReviewPRSplitedPrompt, genPRSummaryPrompt };

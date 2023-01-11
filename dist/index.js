@@ -13611,7 +13611,16 @@ When a diff is too large, I will omit it and tell you about that.`,
   };
 }
 
-module.exports = { genReviewPRPrompt, genReviewPRSplitedPrompt };
+function genPRSummaryPrompt(title, body, diff) {
+  const prompt = `Summarize the code changes made in this PR as a list of no more than 10 entries.
+  title: ${title}
+  body: ${body}
+  The following diff is the changes made in this PR.
+  ${diff}`;
+  return prompt;
+}
+
+module.exports = { genReviewPRPrompt, genReviewPRSplitedPrompt, genPRSummaryPrompt };
 
 
 /***/ }),
@@ -13627,7 +13636,7 @@ const github = __nccwpck_require__(5438);
 const octokit = new Octokit();
 const context = github.context;
 
-async function runPRReview({ api, repo, owner, number, split }) {
+async function runPRReview ({ api, repo, owner, number, split }) {
   const {
     data: { title, body },
   } = await octokit.pulls.get({
@@ -13677,7 +13686,33 @@ async function runPRReview({ api, repo, owner, number, split }) {
   });
 }
 
-module.exports = { runPRReview };
+async function runPRSummary ({ api, repo, owner, number }) {
+  const {
+    data: { title, body },
+  } = await octokit.pulls.get({
+    owner,
+    repo,
+    pull_number: number,
+  });
+  const { data: diff } = await octokit.rest.pulls.get({
+    owner,
+    repo,
+    pull_number: number,
+    mediaType: {
+      format: "diff",
+    },
+  });
+  const prompt = genReviewPRPrompt(title, body, diff);
+  core.info(`The prompt is: ${prompt}`);
+  const response = await callChatGPT(api, prompt, 5);
+  await octokit.issues.createComment({
+    ...context.repo,
+    issue_number: number,
+    body: response,
+  });
+}
+
+module.exports = { runPRReview, runPRSummary };
 
 
 /***/ }),
@@ -14059,15 +14094,16 @@ var __webpack_exports__ = {};
 const core = __nccwpck_require__(2186);
 
 const { createChatGPTAPI } = __nccwpck_require__(4835);
-const { runPRReview } = __nccwpck_require__(1499);
+const { runPRReview, runPRSummary } = __nccwpck_require__(1499);
 
 // most @actions toolkit packages have async methods
-async function run() {
+async function run () {
   try {
     const number = parseInt(core.getInput("number"));
     const sessionToken = core.getInput("sessionToken");
     const mode = core.getInput("mode");
     const split = core.getInput("split");
+    const operation = core.getInput("operation");
 
     // Get current repo.
     const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
@@ -14076,7 +14112,11 @@ async function run() {
     const api = await createChatGPTAPI(sessionToken);
 
     if (mode == "pr") {
-      runPRReview({ api, owner, repo, number, split });
+      if (operation === "summarize") {
+        runPRSummary({ api, owner, repo, number });
+      } else {
+        runPRReview({ api, owner, repo, number, split });
+      }
     } else if (mode == "issue") {
       throw "Not implemented!";
     } else {
