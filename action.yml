@@ -1,5 +1,5 @@
-name: "ChatGPT Integration"
-description: "This action integrates ChatGPT into your CI."
+name: "ChatGPT Action"
+description: "Review or Summarize your PR with AI"
 branding:
   icon: activity
   color: green
